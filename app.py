@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import joblib
-import shap
 import plotly.graph_objects as go
 
 from reportlab.lib.pagesizes import letter
@@ -27,7 +26,6 @@ st.set_page_config(
 )
 
 
-
 # ---------------------------------------------------------
 # LOAD MODEL
 # ---------------------------------------------------------
@@ -35,79 +33,6 @@ st.set_page_config(
 model = joblib.load(
     "model/credit_risk_model.pkl"
 )
-
-
-
-# ---------------------------------------------------------
-# FEATURE EXPLANATION MAP
-# ---------------------------------------------------------
-
-feature_labels = {
-
-    "remainder__LIMIT_BAL":
-        "Credit Limit",
-
-    "remainder__AGE":
-        "Customer Age",
-
-    "remainder__PAY_0":
-        "Latest Payment Status",
-
-    "remainder__PAY_2":
-        "Payment Status (2 Months Ago)",
-
-    "remainder__PAY_3":
-        "Payment Status (3 Months Ago)",
-
-    "remainder__PAY_4":
-        "Payment Status (4 Months Ago)",
-
-    "remainder__PAY_5":
-        "Payment Status (5 Months Ago)",
-
-    "remainder__PAY_6":
-        "Payment Status (6 Months Ago)",
-
-
-    "remainder__BILL_AMT1":
-        "Latest Statement Balance",
-
-    "remainder__BILL_AMT2":
-        "Previous Statement Balance",
-
-    "remainder__BILL_AMT3":
-        "Statement Balance (3 Months Ago)",
-
-    "remainder__BILL_AMT4":
-        "Statement Balance (4 Months Ago)",
-
-    "remainder__BILL_AMT5":
-        "Statement Balance (5 Months Ago)",
-
-    "remainder__BILL_AMT6":
-        "Statement Balance (6 Months Ago)",
-
-
-    "remainder__PAY_AMT1":
-        "Latest Payment Made",
-
-    "remainder__PAY_AMT2":
-        "Payment Made (2 Months Ago)",
-
-    "remainder__PAY_AMT3":
-        "Payment Made (3 Months Ago)",
-
-    "remainder__PAY_AMT4":
-        "Payment Made (4 Months Ago)",
-
-    "remainder__PAY_AMT5":
-        "Payment Made (5 Months Ago)",
-
-    "remainder__PAY_AMT6":
-        "Payment Made (6 Months Ago)",
-
-}
-
 
 
 # ---------------------------------------------------------
@@ -124,31 +49,39 @@ def generate_pdf(
 
     buffer = BytesIO()
 
-
     doc = SimpleDocTemplate(
         buffer,
         pagesize=letter
     )
 
-
     styles = getSampleStyleSheet()
-
 
     content = []
 
-
     content.append(
         Paragraph(
-            "CreditGuard AI - Credit Risk Report",
+            "CreditGuard AI",
             styles["Title"]
         )
     )
 
+    content.append(
+        Paragraph(
+            "AI Credit Risk Assessment Report",
+            styles["Heading2"]
+        )
+    )
 
     content.append(
         Spacer(1,20)
     )
 
+    content.append(
+        Paragraph(
+            "<b>Customer Profile</b>",
+            styles["Heading3"]
+        )
+    )
 
     for key,value in customer.items():
 
@@ -159,11 +92,16 @@ def generate_pdf(
             )
         )
 
-
     content.append(
         Spacer(1,20)
     )
 
+    content.append(
+        Paragraph(
+            "<b>Prediction Results</b>",
+            styles["Heading3"]
+        )
+    )
 
     content.append(
         Paragraph(
@@ -172,14 +110,12 @@ def generate_pdf(
         )
     )
 
-
     content.append(
         Paragraph(
             f"Default Probability: {probability:.2f}%",
             styles["Normal"]
         )
     )
-
 
     content.append(
         Paragraph(
@@ -188,39 +124,31 @@ def generate_pdf(
         )
     )
 
-
     content.append(
         Spacer(1,20)
     )
 
-
     content.append(
         Paragraph(
-            "Important Risk Factors:",
+            "<b>Key Risk Indicators</b>",
             styles["Heading3"]
         )
     )
 
-
-    for factor in factors:
+    for item in factors:
 
         content.append(
             Paragraph(
-                factor,
+                item,
                 styles["Normal"]
             )
         )
 
-
     doc.build(content)
-
 
     buffer.seek(0)
 
-
     return buffer
-
-
 
 
 # ---------------------------------------------------------
@@ -231,12 +159,13 @@ def risk_gauge(score):
 
     fig = go.Figure(
         go.Indicator(
+
             mode="gauge+number",
+
             value=score,
 
             title={
-                "text":
-                "Credit Risk Score"
+                "text":"Credit Risk Score"
             },
 
             gauge={
@@ -245,38 +174,45 @@ def risk_gauge(score):
                     "range":[0,100]
                 },
 
+                "bar":{
+                    "color":"darkblue"
+                },
+
                 "steps":[
 
                     {
                         "range":[0,30],
-                        "color":"green"
+                        "color":"#22C55E"
                     },
 
                     {
                         "range":[30,60],
-                        "color":"yellow"
+                        "color":"#FACC15"
                     },
 
                     {
                         "range":[60,100],
-                        "color":"red"
+                        "color":"#EF4444"
                     }
 
                 ]
 
             }
+
         )
     )
 
-
     fig.update_layout(
-        height=300
+        height=320,
+        margin=dict(
+            l=20,
+            r=20,
+            t=50,
+            b=20
+        )
     )
 
-
     return fig
-
-
 
 
 # ---------------------------------------------------------
@@ -286,56 +222,69 @@ def risk_gauge(score):
 st.markdown("""
 <style>
 
-.block-container {
+.block-container{
     padding-top:2rem;
 }
 
+.main-header{
 
-.main-header {
+    background:linear-gradient(
+        90deg,
+        #1E3A8A,
+        #2563EB
+    );
 
-    background:linear-gradient(90deg,#1E3A8A,#2563EB);
     padding:30px;
+
     border-radius:15px;
+
     color:white;
+
     text-align:center;
-    margin-bottom:20px;
+
+    margin-bottom:25px;
 
 }
 
-
-.metric-card {
+.metric-card{
 
     background:#F8FAFC;
+
     padding:25px;
+
     border-radius:15px;
+
     border:1px solid #E2E8F0;
+
     box-shadow:0px 4px 10px rgba(0,0,0,0.05);
 
 }
 
-
-.footer {
+.footer{
 
     text-align:center;
+
     color:gray;
+
     padding-top:30px;
+
+    font-size:14px;
 
 }
 
-
-.sidebar-title {
+.sidebar-title{
 
     font-size:22px;
+
     font-weight:bold;
+
     color:#2563EB;
 
 }
 
 </style>
-
 """,
 unsafe_allow_html=True)
-
 
 
 # ---------------------------------------------------------
@@ -356,10 +305,8 @@ Predict customer credit default risk using Machine Learning
 </p>
 
 </div>
-
 """,
 unsafe_allow_html=True)
-
 
 
 # ---------------------------------------------------------
@@ -380,10 +327,9 @@ with st.sidebar.expander(
 ):
 
     gender_options = {
-        "Male":1,
-        "Female":2
+        "Male": 1,
+        "Female": 2
     }
-
 
     gender = st.selectbox(
         "Gender",
@@ -393,56 +339,49 @@ with st.sidebar.expander(
     sex = gender_options[gender]
 
 
-
     education_options = {
 
-        "Unknown":0,
-        "High School":1,
-        "College":2,
-        "University":3,
-        "Diploma":4,
-        "PhD":5,
-        "Other":6
+        "Unknown": 0,
+        "High School": 1,
+        "College": 2,
+        "University": 3,
+        "Diploma": 4,
+        "PhD": 5,
+        "Other": 6
 
     }
-
 
     education = st.selectbox(
         "Education Level",
         list(education_options.keys())
     )
 
-
     education_value = education_options[education]
-
 
 
     marriage_options = {
 
-        "Unknown":0,
-        "Married":1,
-        "Single":2,
-        "Other":3
+        "Unknown": 0,
+        "Married": 1,
+        "Single": 2,
+        "Other": 3
 
     }
-
 
     marriage = st.selectbox(
         "Marital Status",
         list(marriage_options.keys())
     )
 
-
     marriage_value = marriage_options[marriage]
 
 
     age = st.slider(
         "Age",
-        21,
-        80,
-        30
+        min_value=21,
+        max_value=80,
+        value=30
     )
-
 
 
 # ---------------------------------------------------------
@@ -454,13 +393,16 @@ with st.sidebar.expander(
     expanded=True
 ):
 
+    st.caption(
+        "Total approved credit limit for the customer."
+    )
+
     limit_bal = st.number_input(
         "Credit Limit",
         min_value=10000,
         value=50000,
         step=10000
     )
-
 
 
 # ---------------------------------------------------------
@@ -471,89 +413,93 @@ with st.sidebar.expander(
     "📅 Payment History (Last 6 Months)"
 ):
 
-    st.caption(
-"""
-Payment status:
+    st.info(
+        """
+Payment status for the last six months.
 
--1 = Paid on time
-0 = No delay
-1+ = Months delayed
+• -1 = Paid on time
 
-Higher delays increase default risk.
+• 0 = No delay
+
+• 1–6 = Months overdue
+
+Higher delays generally increase default risk.
 """
     )
 
-
-    pay_options = {
+    payment_status = {
 
         "Paid on time (-1)": -1,
-        "No delay (0)":0,
-        "1 month delay":1,
-        "2 months delay":2,
-        "3 months delay":3,
-        "4 months delay":4,
-        "5 months delay":5,
-        "6+ months delay":6
+        "No delay (0)": 0,
+        "1 Month Late": 1,
+        "2 Months Late": 2,
+        "3 Months Late": 3,
+        "4 Months Late": 4,
+        "5 Months Late": 5,
+        "6+ Months Late": 6
 
     }
 
-
-    pay_0 = pay_options[
+    pay_0 = payment_status[
         st.selectbox(
             "Latest Payment Status",
-            list(pay_options.keys())
+            payment_status.keys()
         )
     ]
 
-
-    pay_2 = pay_options[
+    pay_2 = payment_status[
         st.selectbox(
-            "Payment Status (2 Months Ago)",
-            list(pay_options.keys())
+            "2 Months Ago",
+            payment_status.keys()
         )
     ]
 
-
-    pay_3 = pay_options[
+    pay_3 = payment_status[
         st.selectbox(
-            "Payment Status (3 Months Ago)",
-            list(pay_options.keys())
+            "3 Months Ago",
+            payment_status.keys()
         )
     ]
 
-
-    pay_4 = pay_options[
+    pay_4 = payment_status[
         st.selectbox(
-            "Payment Status (4 Months Ago)",
-            list(pay_options.keys())
+            "4 Months Ago",
+            payment_status.keys()
         )
     ]
 
-
-    pay_5 = pay_options[
+    pay_5 = payment_status[
         st.selectbox(
-            "Payment Status (5 Months Ago)",
-            list(pay_options.keys())
+            "5 Months Ago",
+            payment_status.keys()
         )
     ]
 
-
-    pay_6 = pay_options[
+    pay_6 = payment_status[
         st.selectbox(
-            "Payment Status (6 Months Ago)",
-            list(pay_options.keys())
+            "6 Months Ago",
+            payment_status.keys()
         )
     ]
-
 
 
 # ---------------------------------------------------------
-# BILL AMOUNTS
+# CREDIT CARD BILLS
 # ---------------------------------------------------------
 
 with st.sidebar.expander(
-    "🧾 Credit Card Bills"
+    "🧾 Credit Card Statements"
 ):
+
+    st.info(
+        """
+Outstanding balance shown on the customer's
+monthly credit card statements.
+
+Higher balances relative to the credit limit
+may indicate increased financial risk.
+"""
+    )
 
     bill_amt1 = st.number_input(
         "Latest Statement Balance",
@@ -561,97 +507,112 @@ with st.sidebar.expander(
     )
 
     bill_amt2 = st.number_input(
-        "Previous Statement Balance",
+        "Previous Month Balance",
         min_value=0
     )
 
     bill_amt3 = st.number_input(
-        "Statement Balance (3 Months Ago)",
+        "3 Months Ago",
         min_value=0
     )
 
     bill_amt4 = st.number_input(
-        "Statement Balance (4 Months Ago)",
+        "4 Months Ago",
         min_value=0
     )
 
     bill_amt5 = st.number_input(
-        "Statement Balance (5 Months Ago)",
+        "5 Months Ago",
         min_value=0
     )
 
     bill_amt6 = st.number_input(
-        "Statement Balance (6 Months Ago)",
+        "6 Months Ago",
         min_value=0
     )
 
 
-
 # ---------------------------------------------------------
-# PAYMENT AMOUNTS
+# MONTHLY PAYMENTS
 # ---------------------------------------------------------
 
 with st.sidebar.expander(
     "💳 Monthly Payments"
 ):
 
+    st.info(
+        """
+Actual payments made toward the credit card.
+
+Customers consistently paying a large portion
+of their balance generally present lower risk.
+"""
+    )
+
     pay_amt1 = st.number_input(
-        "Latest Payment Made",
+        "Latest Payment",
         min_value=0
     )
 
     pay_amt2 = st.number_input(
-        "Payment Made (2 Months Ago)",
+        "2 Months Ago",
         min_value=0
     )
 
     pay_amt3 = st.number_input(
-        "Payment Made (3 Months Ago)",
+        "3 Months Ago",
         min_value=0
     )
 
     pay_amt4 = st.number_input(
-        "Payment Made (4 Months Ago)",
+        "4 Months Ago",
         min_value=0
     )
 
     pay_amt5 = st.number_input(
-        "Payment Made (5 Months Ago)",
+        "5 Months Ago",
         min_value=0
     )
 
     pay_amt6 = st.number_input(
-        "Payment Made (6 Months Ago)",
-        min_value=0)
-
-
-
-predict = st.sidebar.button(
-    "🔍 Predict Credit Risk",
-    use_container_width=True
-)
-
-
-
-# ---------------------------------------------------------
-# DASHBOARD
-# ---------------------------------------------------------
-
-left,right = st.columns([1,1])
-
-
-
-with left:
-
-    st.subheader(
-        "📋 Customer Profile"
+        "6 Months Ago",
+        min_value=0
     )
 
 
-    st.markdown(
-f"""
+# ---------------------------------------------------------
+# PREDICT BUTTON
+# ---------------------------------------------------------
 
+predict = st.sidebar.button(
+    "🔍 Predict Credit Risk",
+    use_container_width=True,
+    type="primary"
+)
+
+
+# ---------------------------------------------------------
+# MAIN DASHBOARD
+# ---------------------------------------------------------
+
+left, right = st.columns([1, 1])
+
+
+# ---------------------------------------------------------
+# CUSTOMER PROFILE
+# ---------------------------------------------------------
+
+with left:
+
+    st.subheader("📋 Customer Profile")
+
+    st.markdown(
+        f"""
 <div class="metric-card">
+
+<h3>Customer Summary</h3>
+
+<hr>
 
 <b>Gender:</b> {gender}
 
@@ -661,7 +622,7 @@ f"""
 
 <br><br>
 
-<b>Marriage:</b> {marriage}
+<b>Marital Status:</b> {marriage}
 
 <br><br>
 
@@ -672,23 +633,20 @@ f"""
 <b>Credit Limit:</b> {limit_bal:,}
 
 </div>
-
 """,
-unsafe_allow_html=True
-)
-
-
-
-with right:
-
-
-    st.subheader(
-        "🛡️ Risk Assessment"
+        unsafe_allow_html=True
     )
 
 
-    if predict:
+# ---------------------------------------------------------
+# RISK ASSESSMENT
+# ---------------------------------------------------------
 
+with right:
+
+    st.subheader("🛡️ Risk Assessment")
+
+    if predict:
 
         input_data = pd.DataFrame({
 
@@ -722,62 +680,69 @@ with right:
         })
 
 
+        prediction = model.predict(input_data)
 
-        probability = model.predict_proba(
-            input_data
-        )
+        probability = model.predict_proba(input_data)
 
+        risk_probability = probability[0][1] * 100
 
-        risk_probability = probability[0][1]*100
-
-        confidence = max(probability[0])*100
-
+        confidence = max(probability[0]) * 100
 
 
         if risk_probability < 30:
 
-            risk_level="Low Risk 🟢"
-            recommendation="Customer has low default probability."
+            risk_level = "🟢 Low Risk"
 
+            recommendation = (
+                "Approve with standard verification."
+            )
 
         elif risk_probability < 60:
 
-            risk_level="Medium Risk 🟡"
-            recommendation="Customer requires additional review."
+            risk_level = "🟡 Medium Risk"
 
+            recommendation = (
+                "Manual review is recommended."
+            )
 
         else:
 
-            risk_level="High Risk 🔴"
-            recommendation="Customer requires verification."
+            risk_level = "🔴 High Risk"
+
+            recommendation = (
+                "Further verification is strongly recommended."
+            )
 
 
-
-        st.markdown(
-f"""
+        st.markdown(f"""
 
 <div class="metric-card">
 
-<h2>
+<h2 style="text-align:center;">
 {risk_level}
 </h2>
 
-<h1>
+<hr>
+
+<h1 style="text-align:center;">
 {risk_probability:.2f}%
 </h1>
 
+<h4 style="text-align:center;">
+Default Probability
+</h4>
 
-<b>Default Probability</b>
+<hr>
 
-<br><br>
+<b>Model Confidence</b>
 
-<b>Confidence:</b>
+<br>
+
 {confidence:.2f}%
 
-
 <br><br>
 
-<b>Recommendation:</b>
+<b>Recommendation</b>
 
 <br>
 
@@ -785,157 +750,178 @@ f"""
 
 </div>
 
-""",
-unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
-
-
-        # Risk Gauge
 
         st.plotly_chart(
-            risk_gauge(risk_probability),
+            risk_gauge(
+                risk_probability
+            ),
             use_container_width=True
         )
 
 
-
-        # -------------------------------------------------
-        # SHAP
-        # -------------------------------------------------
-
-        st.subheader(
-            "🔍 Why This Prediction?"
+        st.progress(
+            int(risk_probability)
         )
 
 
-        shap_factors=[]
+        st.subheader(
+            "🔍 Key Risk Indicators"
+        )
 
 
-        try:
-
-            preprocessor=model.named_steps["preprocessor"]
-
-            rf_model=model.named_steps["model"]
+        risk_factors = []
 
 
-            transformed=preprocessor.transform(
-                input_data
+        if pay_0 > 0:
+
+            risk_factors.append(
+                f"🔴 Latest payment is {pay_0} month(s) overdue."
             )
 
 
-            features=preprocessor.get_feature_names_out()
+        if pay_2 > 0:
 
-
-            explainer=shap.TreeExplainer(
-                rf_model
+            risk_factors.append(
+                "🔴 Previous payment history shows delays."
             )
 
 
-            values=explainer.shap_values(
-                transformed
+        if limit_bal > 0:
+
+            utilization = (
+                bill_amt1 / limit_bal
             )
 
 
-            if isinstance(values,list):
+            if utilization >= 0.80:
 
-                values=values[1][0]
+                risk_factors.append(
+                    "🔴 Credit utilization exceeds 80%."
+                )
 
-            elif len(values.shape)==3:
+            elif utilization <= 0.30:
 
-                values=values[0,:,1]
+                risk_factors.append(
+                    "🟢 Credit utilization is below 30%."
+                )
+
+
+        if bill_amt1 > 0:
+
+            payment_ratio = (
+                pay_amt1 / bill_amt1
+            )
+
+
+            if payment_ratio < 0.20:
+
+                risk_factors.append(
+                    "🔴 Latest payment covered less than 20% of the outstanding balance."
+                )
+
+            elif payment_ratio >= 1:
+
+                risk_factors.append(
+                    "🟢 Latest statement was fully paid."
+                )
+
+
+        if age < 25:
+
+            risk_factors.append(
+                "🟡 Younger applicants generally have limited credit history."
+            )
+
+
+        if age > 55:
+
+            risk_factors.append(
+                "🟢 Mature applicants often demonstrate more stable repayment behaviour."
+            )
+
+
+        if pay_0 <= 0 and pay_2 <= 0:
+
+            risk_factors.append(
+                "🟢 No recent payment delays detected."
+            )
+
+
+        if len(risk_factors) == 0:
+
+            risk_factors.append(
+                "No significant positive or negative indicators detected."
+            )
+
+
+        positive = 0
+        negative = 0
+        neutral = 0
+
+
+        for factor in risk_factors:
+
+            if factor.startswith("🔴"):
+
+                negative += 1
+                st.error(factor)
+
+            elif factor.startswith("🟢"):
+
+                positive += 1
+                st.success(factor)
 
             else:
 
-                values=values[0]
+                neutral += 1
+                st.warning(factor)
 
 
-
-            shap_df=pd.DataFrame({
-
-                "Feature":features,
-                "Impact":values
-
-            })
+        st.divider()
 
 
-            shap_df["Display"]=shap_df["Feature"].map(
-                feature_labels
-            ).fillna(
-                shap_df["Feature"]
-            )
+        c1, c2, c3 = st.columns(3)
+
+        c1.metric(
+            "Positive Indicators",
+            positive
+        )
+
+        c2.metric(
+            "Risk Indicators",
+            negative
+        )
+
+        c3.metric(
+            "Neutral Indicators",
+            neutral
+        )
 
 
-            shap_df["Abs"]=shap_df["Impact"].abs()
+        customer_data = {
 
-
-            shap_df=shap_df.sort_values(
-                "Abs",
-                ascending=False
-            ).head(8)
-
-
-
-            chart_df=shap_df[
-                ["Display","Impact"]
-            ]
-
-
-            st.bar_chart(
-                chart_df.set_index("Display")
-            )
-
-
-
-            for _,row in shap_df.iterrows():
-
-                if row["Impact"]>0:
-
-                    text=f"🔴 {row['Display']} increased risk"
-
-                    st.error(text)
-
-                else:
-
-                    text=f"🟢 {row['Display']} reduced risk"
-
-                    st.success(text)
-
-
-
-                shap_factors.append(text)
-
-
-
-        except Exception as e:
-
-            st.warning(
-                f"SHAP unavailable: {e}"
-            )
-
-
-
-        # -------------------------------------------------
-        # PDF REPORT
-        # -------------------------------------------------
-
-        customer_data={
-
-            "Gender":gender,
-            "Education":education,
-            "Age":age,
-            "Credit Limit":limit_bal
+            "Gender": gender,
+            "Education": education,
+            "Marital Status": marriage,
+            "Age": age,
+            "Credit Limit": f"{limit_bal:,}"
 
         }
 
 
-        pdf=generate_pdf(
+        pdf = generate_pdf(
 
             customer_data,
+
             risk_level,
+
             risk_probability,
+
             confidence,
-            shap_factors
+
+            risk_factors
 
         )
 
@@ -946,58 +932,184 @@ unsafe_allow_html=True
 
             pdf,
 
-            file_name="credit_report.pdf",
+            file_name="CreditGuard_Report.pdf",
 
-            mime="application/pdf"
+            mime="application/pdf",
+
+            use_container_width=True
 
         )
-
 
     else:
 
         st.info(
-            "Enter customer information and click Predict"
+            "Complete the customer information and click **Predict Credit Risk**."
         )
-
-
-
 # ---------------------------------------------------------
 # MODEL MONITORING
 # ---------------------------------------------------------
 
 st.divider()
 
-st.subheader(
-    "📊 Model Monitoring"
-)
+st.subheader("📊 Model Monitoring Dashboard")
 
-
-m1,m2,m3,m4=st.columns(4)
-
+m1, m2, m3, m4 = st.columns(4)
 
 m1.metric(
     "Algorithm",
     "Random Forest"
 )
 
-
 m2.metric(
     "Accuracy",
     "81.78%"
 )
-
 
 m3.metric(
     "ROC-AUC",
     "77.05%"
 )
 
-
 m4.metric(
     "Features",
     "23"
 )
 
+
+st.markdown("---")
+
+
+left, right = st.columns([1,1])
+
+
+with left:
+
+    st.markdown("""
+### 🤖 Model Information
+
+- **Algorithm:** Random Forest Classifier
+- **Trees:** 200
+- **Maximum Depth:** 10
+- **Minimum Samples Split:** 10
+- **Minimum Samples Leaf:** 5
+- **Categorical Encoding:** One-Hot Encoding
+- **Preprocessing:** Scikit-learn Pipeline
+- **Prediction:** Probability-based Binary Classification
+""")
+
+
+with right:
+
+    st.markdown("""
+### 📈 Dataset Information
+
+- **Dataset:** UCI Default of Credit Card Clients
+- **Records:** 30,000
+- **Input Features:** 23
+- **Target:** Default Payment (Next Month)
+- **Missing Values:** None
+- **Framework:** Scikit-learn
+""")
+
+
+st.markdown("---")
+
+
+st.subheader("💡 Model Insights")
+
+
+i1, i2, i3 = st.columns(3)
+
+
+with i1:
+
+    st.info(
+"""
+### Strengths
+
+✅ Pipeline-based preprocessing
+
+✅ Random Forest classifier
+
+✅ Probability prediction
+
+✅ Professional dashboard
+
+✅ Downloadable PDF report
+"""
+    )
+
+
+with i2:
+
+    st.warning(
+"""
+### Important Notes
+
+• This is a portfolio project.
+
+• Predictions should not be used for real lending decisions.
+
+• Educational labels follow the original dataset encoding.
+
+• Payment history strongly influences predictions.
+"""
+    )
+
+
+with i3:
+
+    st.success(
+"""
+### Technologies
+
+• Python
+
+• Streamlit
+
+• Scikit-learn
+
+• Plotly
+
+• Pandas
+
+• Joblib
+
+• ReportLab
+"""
+    )
+
+
+# ---------------------------------------------------------
+# ABOUT
+# ---------------------------------------------------------
+
+with st.expander("ℹ️ About CreditGuard AI"):
+
+    st.markdown("""
+CreditGuard AI is an end-to-end Machine Learning portfolio project that predicts
+the probability of credit default using customer demographic information,
+credit history, billing records and payment behaviour.
+
+### Key Features
+
+- AI-powered credit risk prediction
+- Probability-based risk scoring
+- Interactive risk gauge
+- Business-friendly risk indicators
+- PDF credit assessment report
+- Responsive Streamlit dashboard
+- End-to-end Scikit-learn pipeline
+
+This application demonstrates a complete Machine Learning workflow including:
+
+1. Data preprocessing
+2. Feature engineering
+3. Model training
+4. Hyperparameter tuning
+5. Pipeline serialization
+6. Interactive deployment
+""")
 
 
 # ---------------------------------------------------------
@@ -1006,17 +1118,25 @@ m4.metric(
 
 st.markdown(
 """
-<div class="footer">
+<hr>
 
-CreditGuard AI
+<div style="text-align:center;color:#6B7280;font-size:14px;">
 
-<br>
+<h4>🛡️ CreditGuard AI</h4>
 
-Machine Learning Portfolio Project
+AI-Powered Credit Risk Assessment System
 
-<br>
+<br><br>
 
-Built with ❤️ using Streamlit & Scikit-Learn
+Built using
+<strong>Python</strong> •
+<strong>Scikit-learn</strong> •
+<strong>Streamlit</strong> •
+<strong>Plotly</strong>
+
+<br><br>
+
+Machine Learning Portfolio Project © 2026
 
 </div>
 """,
