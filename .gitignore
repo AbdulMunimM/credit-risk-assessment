@@ -1,17 +1,18 @@
+# Virtual Environment
+.venv/
+
 # Python
 __pycache__/
 *.pyc
-*.pyo
-
-# Virtual environment
-venv/
-.env/
-
-# Streamlit
-.streamlit/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# Streamlit cache
+.streamlit/
 
 # OS files
 .DS_Store
